@@ -37,6 +37,8 @@ $themeButton.addEventListener("click", toggleTheme)
 function toggleTheme() {
   $isDark = !$isDark
   updateTheme()
+  // week 10 - step - save choices
+  saveChoices()
 }
 
 function updateTheme() {
@@ -128,6 +130,8 @@ function addNote($event) {
   $notesForm.reset()
   $notesForm.elements.note.focus()
   $status.textContent = "Note added."
+  // week 10 - step 1 save choices
+  saveChoices()
 }
 function showNotes() {
   $notesList.replaceChildren() // clear the list contents
@@ -160,4 +164,100 @@ function removeNote($event) {
   $notes.splice($index, 1)
   showNotes()
   $status.textContent = "Note removed."
+}
+
+// week 10 - local storage and fetch 
+
+const $storageKey = "mtm6302-cat-choices"
+function saveChoices(){
+  const $choices = {favIds: $favouriteIds, dark: $isDark, notes: $notes}
+  try {
+
+  localStorage.setItem($storageKey, JSON.stringify($choices))
+  $status.textContent = "choices and notes saved "
+
+  } catch (error) {
+    console.error(error)
+    $status.textContent = "Unable to save changes in the browser."
+
+  }
+}
+
+// week 10 - step 2 - read saved choices and reuse display function 
+
+function localChoices(){
+  try{
+    const $savedChoices = localStorage.getItem($storageKey)
+    if ($savedChoices === null){
+      $status.textContent = "No saved choices found"
+      return
+    }
+    const $choices = JSON.parse($savedChoices)
+    $favouriteIds = $choices.favIds
+    $isDark = $choices.dark
+    $notes = $choices.notes
+
+    updateFavourites()
+    updateTheme()
+    showNotes()
+
+    $status.textContent = "Saved choices and notes restored."
+
+  }catch (error){
+    console.error(error)
+    $status.textContent = "Unable to load saved choices."
+
+  }
+}
+
+// week 10 - step 4 - reset data and the page
+document.getElementById("clear-choices").addEventListener("click", clearChoices)
+
+function clearChoices(){
+  try {
+    localStorage.removeItem($storageKey)
+    $favouriteIds = []
+    $isDark = false
+    $notes = []
+    $selectedCatId = ''
+
+    updateFavourites()
+    updateTheme()
+    showNotes()
+
+    $notesForm.reset()
+    document.getElementById("notes-fieldset").disabled = true
+    document.getElementById("profile").hidden = true
+
+    $status.textContent = "page rest completed."
+
+  }catch (error){
+    console.error(error)
+    $status.textContent= "Unable to save choices."
+  }
+}
+
+// week 10 - step 5 - 
+const $factButton = document.getElementById("get-fact")
+const $factOutput = document.getElementById("fact")
+
+$factButton.addEventListener("click", fetchCatFact)
+
+async function fetchCatFact(){
+  $factButton.disabled = true
+  $factOutput.textContent = "loading a cat fact..."
+
+  try{
+    const $response = await fetch("https://catfact.ninja/fact")
+    const $data = await $response.json()
+    $factOutput.textContent = $data.fact
+
+  } catch (error){
+  console.error(error)
+  $factOutput.textContent = "Unable to load a cat fact, please refresh and try"
+
+
+  }
+  $factButton.disabled = false
+
 }
